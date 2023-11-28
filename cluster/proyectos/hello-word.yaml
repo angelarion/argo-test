@@ -1,0 +1,137 @@
+apiVersion: v1
+items:
+- apiVersion: argoproj.io/v1alpha1
+  kind: AppProject
+  metadata:
+    finalizers:
+    - resources-finalizer.argocd.argoproj.io
+    name: hello-word
+  spec:
+    clusterResourceWhitelist:
+    - group: '*'
+      kind: Namespace
+    - group: argoproj.io
+      kind: Application
+    - group: argoproj.io
+      kind: AppProject
+    - group: argoproj.io
+      kind: ApplicationSet
+    - group: '*'
+      kind: Secret
+    - group: '*'
+      kind: PersistentVolumeClaim
+    - group: '*'
+      kind: Pipeline
+    - group: '*'
+      kind: ServiceAccount
+    - group: '*'
+      kind: LimitRange
+    - group: "*"
+      kind: ResourceQuota
+    
+    destinations:
+    - namespace: openshift-operators
+      server: https://kubernetes.default.svc
+    - namespace: hello-word-dev
+      server: https://kubernetes.default.svc
+    - namespace: hello-word-test
+      server: https://kubernetes.default.svc
+    namespaceResourceBlacklist:
+    - group: ""
+      kind: NetworkPolicy
+    sourceRepos:
+    - '*'
+- apiVersion: argoproj.io/v1alpha1
+  kind: ApplicationSet
+  metadata:
+    name: hello-word-set
+  spec:
+    generators:
+    - list:
+        elements:
+        - env: dev
+          project: hello-word
+        - env: test
+          project: hello-word    
+    template:
+      metadata:
+        finalizers:
+        - resources-finalizer.argocd.argoproj.io
+        name: '{{project}}-{{env}}'
+        namespace: openshift-operators
+      spec:
+        destination:
+          namespace: '{{project}}-{{env}}'
+          server: https://kubernetes.default.svc
+        project: '{{project}}'
+        source:
+          directory:
+            recurse: true
+          path: cluster/proyectos/{{project}}/{{env}}
+          repoURL: https://github.com/angelarion/argo-test.git
+          targetRevision: main
+        syncPolicy: {}
+- apiVersion: argoproj.io/v1alpha1
+  kind: AppProject
+  metadata:
+    finalizers:
+    - resources-finalizer.argocd.argoproj.io
+    name: hello-word-dev
+  spec:
+    clusterResourceWhitelist:
+    - group: '*'
+      kind: Namespace
+    - group: '*'
+      kind: Secret
+    - group: '*'
+      kind: PersistentVolumeClaim
+    - group: '*'
+      kind: Pipeline
+    - group: '*'
+      kind: ServiceAccount
+    - group: '*'
+      kind: LimitRange
+    - group: "*"
+      kind: ResourceQuota
+    
+    destinations:
+    - namespace: hello-word-dev
+      server: https://kubernetes.default.svc
+    namespaceResourceBlacklist:
+    - group: ""
+      kind: NetworkPolicy
+    sourceRepos:
+    - '*'
+- apiVersion: argoproj.io/v1alpha1
+  kind: AppProject
+  metadata:
+    finalizers:
+    - resources-finalizer.argocd.argoproj.io
+    name: hello-word-test
+  spec:
+    clusterResourceWhitelist:
+    - group: '*'
+      kind: Namespace
+    - group: '*'
+      kind: Secret
+    - group: '*'
+      kind: PersistentVolumeClaim
+    - group: '*'
+      kind: Pipeline
+    - group: '*'
+      kind: ServiceAccount
+    - group: '*'
+      kind: LimitRange
+    - group: "*"
+      kind: ResourceQuota
+    
+    destinations:
+    - namespace: hello-word-test
+      server: https://kubernetes.default.svc
+    namespaceResourceBlacklist:
+    - group: ""
+      kind: NetworkPolicy
+    sourceRepos:
+    - '*'
+kind: List
+metadata: {}
